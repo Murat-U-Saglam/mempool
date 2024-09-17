@@ -1,0 +1,17 @@
+# Common
+README.md
+CHANGELOG.md
+docker-compose.yml
+Dockerfile
+
+# Cache
+*/__pycache__/*
+*/.mypy_cache/*
+*/.pytest_cache/*
+*/.tox/*
+*/.vscode/*
+
+# git
+.git
+.gitattributes
+.gitignore
