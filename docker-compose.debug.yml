@@ -1,0 +1,100 @@
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    hostname: cp-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+    - kafka_network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.0.1
+    hostname: cp-kafka
+    networks:
+      - kafka_network
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    expose:
+      - 9093
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: DOCKER_NET:PLAINTEXT,HOST_NET:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: DOCKER_NET://kafka:9093,HOST_NET://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: DOCKER_NET
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+    depends_on:
+      - zookeeper
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--list", "--bootstrap-server", "localhost:9093"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop
+    hostname: kafdrop-kafka-ui
+    restart: "no"
+    ports:
+      - "9007:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "kafka:29092"
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+
+  producer:
+    build:
+      context: .
+      args:
+        - KAFKA_BROKER=${KAFKA_BROKER}
+        - KAFKA_TOPIC=${KAFKA_TOPIC}
+        - WSS_URL=${WSS_URL}
+    networks:
+      - kafka_network
+    environment:
+      KAFKA_BROKER: ${KAFKA_BROKER}
+      KAFKA_TOPIC: ${KAFKA_TOPIC}
+      WSS_URL: ${WSS_URL}
+      PYTHONUNBUFFERED: 1  
+    command:  ["sh", "-c", "poetry run python -m debugpy --listen 0.0.0.0:5678 --wait-for-client -m mempool.main_producer"]
+    ports:
+      - "5678:5678" 
+    volumes:
+      - ./mempool:/app/mempool
+    depends_on:  
+      kafka:
+        condition: service_healthy
+
+
+  consumer:
+    build:
+      context: .
+      args:
+        - KAFKA_BROKER=${KAFKA_BROKER}
+        - KAFKA_TOPIC=${KAFKA_TOPIC}
+    networks:
+      - kafka_network
+    environment:
+      KAFKA_BROKER: ${KAFKA_BROKER}
+      KAFKA_TOPIC: ${KAFKA_TOPIC}
+    command: ["poetry", "run", "python", "mempool/main_consumer.py"]
+    volumes:
+      - ./mempool:/app/mempool
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+
+networks:
+  kafka_network:
+    name: cp-kafka
+    driver: bridge
