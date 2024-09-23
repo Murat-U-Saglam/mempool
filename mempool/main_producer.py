@@ -1,6 +1,6 @@
 import asyncio
 from mempool.stream.producer.data import log_loop
-from mempool.config.provider import get_wss_provider
+from mempool.config.provider import get_wss_provider, get_producer
 from mempool.config.logging import setup_logger
 from mempool.stream.producer.data import get_transactions_from_mempool
 
@@ -10,8 +10,9 @@ logger = setup_logger(name="main_producer")
 async def main():
     web3 = await get_wss_provider()
     events = await get_transactions_from_mempool(web3)
+    producer = await get_producer()
     try:
-        await log_loop(event_filter=events, web3=web3)
+        await log_loop(event_filter=events, web3=web3, producer=producer)
     except Exception as e:
         logger.error(f"Error in main producer: {e} reason: {e}")
     finally:

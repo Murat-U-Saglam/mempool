@@ -1,7 +1,9 @@
 import logging
 
 
-def setup_logger(name=None, log_file="logs/application.log", level=logging.INFO):
+def setup_logger(
+    name=None, log_file="mempool/logs/application.log", level=logging.INFO
+):
     logger = logging.getLogger(name or __name__)
 
     if not logger.handlers:
