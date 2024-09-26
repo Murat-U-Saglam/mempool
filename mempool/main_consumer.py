@@ -4,7 +4,7 @@ import asyncio
 
 
 async def main():
-    await consume(Settings().KAFKA_TOPIC)
+    await consume(topic_name=Settings().KAFKA_TOPIC)
 
 
 if __name__ == "__main__":

@@ -1,95 +1,96 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Transaction",
-    "type": "object",
-    "properties": {
-      "blockHash": {
-        "type": ["string", "null"],
-        "pattern": "^0x[a-fA-F0-9]{64}$"
-      },
-      "blockNumber": {
-        "type": ["integer", "null"]
-      },
-      "from": {
-        "type": "string",
-        "pattern": "^0x[a-fA-F0-9]{40}$"
-      },
-      "gas": {
-        "type": "integer"
-      },
-      "gasPrice": {
-        "type": "integer"
-      },
-      "maxFeePerGas": {
-        "type": "integer"
-      },
-      "maxPriorityFeePerGas": {
-        "type": "integer"
-      },
-      "hash": {
-        "type": "string",
-        "pattern": "^0x[a-fA-F0-9]{64}$"
-      },
-      "input": {
-        "type": "string",
-        "pattern": "^0x([a-fA-F0-9]{2})*$"
-      },
-      "nonce": {
-        "type": "integer"
-      },
-      "to": {
-        "type": "string",
-        "pattern": "^0x[a-fA-F0-9]{40}$"
-      },
-      "transactionIndex": {
-        "type": ["integer", "null"]
-      },
-      "value": {
-        "type": "integer"
-      },
-      "type": {
-        "type": "integer"
-      },
-      "accessList": {
-        "type": "array",
-        "items": {
-          "type": "object"
-        }
-      },
-      "chainId": {
-        "type": "integer"
-      },
-      "v": {
-        "type": "integer"
-      },
-      "r": {
-        "type": "string",
-        "pattern": "^0x([a-fA-F0-9]{2})*$"
-      },
-      "s": {
-        "type": "string",
-        "pattern": "^0x([a-fA-F0-9]{2})*$"
-      },
-      "yParity": {
-        "type": "integer"
-      }
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Transaction",
+  "type": "object",
+  "properties": {
+    "block_hash": {
+      "type": ["string", "null"],
+      "default": null
     },
-    "required": [
-      "from",
-      "gas",
-      "gasPrice",
-      "maxFeePerGas",
-      "maxPriorityFeePerGas",
-      "hash",
-      "input",
-      "nonce",
-      "to",
-      "value",
-      "type",
-      "chainId",
-      "v",
-      "r",
-      "s",
-      "yParity"
-    ]
-  }
+    "block_number": {
+      "type": ["integer", "null"],
+      "default": null
+    },
+    "from_address": {
+      "type": "string",
+      "pattern": "^0x[a-fA-F0-9]{40}$",
+      "allias": "from"
+    },
+    "gas": {
+      "type": "integer"
+    },
+    "gas_price": {
+      "type": "integer"
+    },
+    "max_fee_per_gas": {
+      "type": ["integer", "null"],
+      "default": null
+    },
+    "max_priority_fee_per_gas": {
+      "type": ["integer", "null"],
+      "default": null
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "([a-fA-F0-9]){64}$"
+    },
+    "input": {
+      "type": ["string", "null"],
+      "pattern": "([a-fA-F0-9])*$",
+      "default": null
+    },
+    "nonce": {
+      "type": "integer"
+    },
+    "to": {
+      "type": "string",
+      "pattern": "^0x[a-fA-F0-9]{40}$"
+    },
+    "transaction_index": {
+      "type": ["integer", "null"],
+      "default": null
+    },
+    "value": {
+      "type": "integer"
+    },
+    "type": {
+      "type": "integer"
+    },
+    "chain_id": {
+      "type": "integer"
+    },
+    "v": {
+      "type": "integer"
+    },
+    "r": {
+      "type": "string",
+      "pattern": "([a-fA-F0-9])*$"
+    },
+    "s": {
+      "type": "string",
+      "pattern": "([a-fA-F0-9])*$"
+    },
+    "yParity": {
+      "type": ["integer", "null"],
+      "default": null
+    }
+  },
+  "required": [
+    "from_address",
+    "gas",
+    "gas_price",
+    "max_fee_per_gas",
+    "max_priority_fee_per_gas",
+    "hash",
+    "input",
+    "nonce",
+    "to",
+    "value",
+    "type",
+    "chain_id",
+    "v",
+    "r",
+    "s",
+    "yParity"
+  ]
+}

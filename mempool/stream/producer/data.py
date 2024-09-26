@@ -1,24 +1,38 @@
 from web3.auto import Web3
 import asyncio
 from mempool.config.logging import setup_logger
-from mempool.stream.producer.topics import create_topic, send_transaction_to_kafka
+from mempool.stream.producer.topics import send_transaction_to_kafka
 from mempool.stream.producer.model import Transaction
+from confluent_kafka import Producer # type: ignore
+from typing import Dict
 
 logger = setup_logger(name="eth-transaction-producer")
 
 
-async def handle_event(event, web3, producer) -> None:
+async def clean_transaction(
+    transaction_data: Dict[str, str | bytes | int],
+) -> Transaction:
+    logger.info(f"Cleaning transaction: {transaction_data}")
+    transaction_dict = dict(transaction_data)
+    hex_keys = ["hash", "input", "blockHash", "r", "s"]
+    for key in hex_keys:
+        if key in transaction_dict and isinstance(
+            transaction_dict[key], bytes
+        ):  ## linter is complaining about this line but we byte type checking here
+            transaction_dict[key] = transaction_dict[key].hex()  # type: ignore
+    transaction_data = Transaction(**transaction_dict)  # type: ignore
+    return transaction_data  # type: ignore
+
+
+async def handle_event(event: Dict, web3: Web3, producer: Producer, topic_name: str) -> None:
     try:
         transaction = Web3.to_json(event).strip('"')
-        transaction_data = web3.eth.get_transaction(transaction)
-        transaction_dict = dict(transaction_data)
-        transaction_data = Transaction(**transaction_dict)
-        topic_name = await create_topic(topic_name="transactions")
-        logger.info(
-            f"Sending transaction to Kafka: {transaction_dict} - {transaction_data}"
-        )
+        transaction_data = web3.eth.get_transaction(transaction) # type: ignore
+        cleaned_transaction = await clean_transaction(transaction_data) # type: ignore
         await send_transaction_to_kafka(
-            transaction_data=transaction_data, topic_name=topic_name, producer=producer
+            transaction_data=cleaned_transaction,
+            topic_name=topic_name,
+            producer=producer,
         )
     except Exception as e:
         logger.error(f"Error in handle_event: {e}")
@@ -30,8 +44,8 @@ async def get_transactions_from_mempool(web3):
     return tx_filter
 
 
-async def log_loop(event_filter, web3, producer, poll_interval=3):
+async def log_loop(event_filter, web3, producer, topic_name: str, poll_interval=3):
     while True:
         for event in event_filter.get_new_entries():
-            await handle_event(event=event, web3=web3, producer=producer)
+            await handle_event(event=event, web3=web3, producer=producer, topic_name=topic_name)
         await asyncio.sleep(delay=poll_interval)

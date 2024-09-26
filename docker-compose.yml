@@ -109,6 +109,8 @@ services:
       args:
         - KAFKA_BROKER=${KAFKA_BROKER}
         - KAFKA_TOPIC=${KAFKA_TOPIC}
+        - KAFKA_GROUP=${KAFKA_GROUP}
+        - SCHEMA_REGISTRY_URL=${SCHEMA_REGISTRY_URL}
       context: .
     command:
       - poetry
@@ -119,6 +121,7 @@ services:
       KAFKA_BROKER: ${KAFKA_BROKER}
       KAFKA_TOPIC: ${KAFKA_TOPIC}
       KAFKA_GROUP: ${KAFKA_GROUP}
+      SCHEMA_REGISTRY_URL: ${SCHEMA_REGISTRY_URL}
     depends_on:
       broker:
         condition: service_healthy

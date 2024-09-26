@@ -1,9 +1,9 @@
 from web3.auto import Web3
 from mempool.config.settings import Settings
 from mempool.config.logging import setup_logger
-from confluent_kafka.schema_registry.schema_registry_client import SchemaRegistryClient
+from confluent_kafka.schema_registry.schema_registry_client import SchemaRegistryClient # type: ignore
 from confluent_kafka import Producer, Consumer  # type: ignore
-from confluent_kafka.admin import AdminClient
+from confluent_kafka.admin import AdminClient # type: ignore
 
 logger = setup_logger(__name__)
 
@@ -37,7 +37,8 @@ async def get_consumer(topic_name: str) -> Consumer:
     return Consumer(
         {
             "bootstrap.servers": Settings().KAFKA_BROKER,
-            "group.id": Settings().KAFKA_GROUP,
+            "client.id": "eth-transaction-consumer",
+            "group.id": "eth-transaction-group",
             "auto.offset.reset": "earliest",
         }
     )
