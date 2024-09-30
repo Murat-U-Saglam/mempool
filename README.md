@@ -1,6 +1,6 @@
 
 
-Group by to: and froms
+Group by to: and from
 Group total gas amount
 total amount in assets - 20% stables - erc29 etc etc
 total dollar amount

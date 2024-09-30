@@ -15,7 +15,23 @@
           "remoteRoot": "/app"
         }
       ],
-    "justMyCode": true
+      "justMyCode": true
+    },
+    {
+      "name": "Python: Remote Attach | Consumer",
+      "type": "python",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5679
+      },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "/app"
+        }
+      ],
+      "justMyCode": true
     }
   ]
 }

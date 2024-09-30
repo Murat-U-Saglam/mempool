@@ -1,7 +1,7 @@
 
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:latest
+    image: confluentinc/cp-zookeeper:7.7.1
     hostname: zookeeper
     container_name: zookeeper
     ports:
@@ -12,7 +12,7 @@ services:
     volumes:
       - ./zookeeper-data:/var/lib/zookeeper
   broker:
-    image: confluentinc/cp-server:latest
+    image: confluentinc/cp-server:7.7.1
     hostname: broker
     container_name: broker
     depends_on:
@@ -117,15 +117,17 @@ services:
         - SCHEMA_REGISTRY_URL=${SCHEMA_REGISTRY_URL}
       context: .
     command:
-      - poetry
-      - run
-      - python
-      - mempool/main_consumer.py
+    - sh  
+    - '-c'  
+    - poetry run python -m debugpy --listen 0.0.0.0:5679 --wait-for-client -m mempool.main_consumer
     environment:
-      KAFKA_BROKER: ${KAFKA_BROKER}
-      KAFKA_TOPIC: ${KAFKA_TOPIC}
-      KAFKA_GROUP: ${KAFKA_GROUP}
-      SCHEMA_REGISTRY_URL: ${SCHEMA_REGISTRY_URL}
+      - KAFKA_BROKER=${KAFKA_BROKER}
+      - KAFKA_TOPIC=${KAFKA_TOPIC}
+      - KAFKA_GROUP=${KAFKA_GROUP}
+      - SCHEMA_REGISTRY_URL=${SCHEMA_REGISTRY_URL}
+      - PYTHONUNBUFFERED=1
+    ports:
+      - "5679:5679"
     depends_on:
       broker:
         condition: service_healthy

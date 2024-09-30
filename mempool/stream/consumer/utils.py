@@ -2,6 +2,7 @@ from confluent_kafka.schema_registry.json_schema import JSONDeserializer # type:
 from mempool.config.provider import get_schema_registry
 from mempool.stream.producer.topics import get_schema   
 
+
 async def get_deserializer():
     json = await get_schema()
     schema_registry = await get_schema_registry()
@@ -10,7 +11,3 @@ async def get_deserializer():
     )  # Convert schema to string
     
     
-async def group_transaction(transaction_data : dict):
-    print(transaction_data)
-    print(type(transaction_data))
-    pass
