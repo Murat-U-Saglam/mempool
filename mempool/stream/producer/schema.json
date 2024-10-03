@@ -14,7 +14,7 @@
     "from_address": {
       "type": "string",
       "pattern": "^0x[a-fA-F0-9]{40}$",
-      "allias": "from"
+      "allias": "from_address"
     },
     "gas": {
       "type": "integer"
@@ -70,7 +70,7 @@
       "type": "string",
       "pattern": "([a-fA-F0-9])*$"
     },
-    "yParity": {
+    "y_parity": {
       "type": ["integer", "null"],
       "default": null
     }
@@ -91,6 +91,6 @@
     "v",
     "r",
     "s",
-    "yParity"
+    "y_parity"
   ]
 }

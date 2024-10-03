@@ -1,4 +1,6 @@
-from web3.auto import Web3
+from web3.providers.persistent import WebSocketProvider
+from web3 import Web3
+from web3 import AsyncWeb3
 from mempool.config.settings import Settings
 from mempool.config.logging import setup_logger
 from confluent_kafka.schema_registry.schema_registry_client import SchemaRegistryClient # type: ignore
@@ -8,9 +10,9 @@ from confluent_kafka.admin import AdminClient # type: ignore
 logger = setup_logger(__name__)
 
 
-async def get_wss_provider() -> Web3:  # LegacyWebSocketProvider
+async def get_wss_provider() -> AsyncWeb3:  # LegacyWebSocketProvider
     wss = Settings().WSS_URL
-    web3 = Web3(Web3.LegacyWebSocketProvider(wss, websocket_timeout=60))
+    web3 = AsyncWeb3(WebSocketProvider(wss, websocket_timeout=300))
     assert web3.is_connected(), "Failed to connect to web3 provider"
     logger.info(f"Connected to {wss}")
     return web3

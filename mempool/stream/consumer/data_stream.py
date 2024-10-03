@@ -5,9 +5,9 @@ from mempool.stream.consumer.utils import get_deserializer
 from confluent_kafka.serialization import SerializationContext, MessageField # type: ignore
 import pandas as pd
 from mempool.config.logging import setup_logger
-from mempool.stream.producer.model import Transaction
+from mempool.stream.producer.model import TransactionRecieve
 from typing import AsyncGenerator, Dict
-import ast
+from web3 import Web3
 
 
 logger = setup_logger(name="eth-transaction-consumer")
@@ -34,7 +34,7 @@ async def consume(c, deserialiser):
 async def group_transaction(stream: AsyncGenerator[dict, None]):
     df_list = []
     async for transaction in stream:
-        model = Transaction(**transaction)
+        model = TransactionRecieve(**transaction)
         df_list.append(model.dict())
         df = pd.DataFrame(df_list)
         grouped = df.groupby('block_number')
@@ -53,8 +53,46 @@ async def main(topic_name: str):
     await group_transaction(stream=stream)
     
 async def analyse_group(group: pd.DataFrame):
+    total_gas_price = await calculate_total_gas_price(group)
+    print(f"Total gas price: {total_gas_price}")
+    return total_gas_price
+
+    
+async def calculate_total_gas_price(group: pd.DataFrame):
     """
-    All of this is per block information
+    Total gas price per block
     """
-    total_gas_price = (group["gas_price"] * group["gas"]).sum() # In Gwei
-    total_gas_price_in_dollars 
+    total_gas_price = group["gas_price"].sum() # In Gwei
+    logger.info(f"Total gas price: {total_gas_price}")
+    total_gas_price_in_eth  = Web3.from_wei(int(total_gas_price), 'ether') # In ether
+    logger.info(f"Total gas price in ether: {total_gas_price_in_eth}")
+    dollar_value = 2000
+    return total_gas_price_in_eth * dollar_value # Assumes 1 ether = 2000 USD USE Api to get the current price
+
+async def group_to_and_from(group: pd.DataFrame):
+    """
+    Group by from and to
+    """
+    pass
+    
+    
+async def biggest_gas_spenders(group: pd.DataFrame):
+    """
+    Biggest gas spenders
+    """
+    grouped = group.groupby('from').agg(func={'gas': 'sum', 'gas_price': 'sum'})
+    pass
+    
+async def biggest_senders(group: pd.DataFrame):
+    """
+    Biggest senders
+    """
+    pass
+    
+async def biggest_receivers(group: pd.DataFrame):
+    """
+    Biggest receivers
+    """
+    pass
+    
+    

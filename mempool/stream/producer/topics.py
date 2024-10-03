@@ -9,6 +9,7 @@ from mempool.stream.producer.model import Transaction
 from mempool.config.provider import get_schema_registry, get_admin_client
 from confluent_kafka.admin import NewTopic # type: ignore
 import json
+from confluent_kafka.schema_registry import SchemaRegistryError # type: ignore
 
 logger = setup_logger(name="topics")
 
@@ -45,17 +46,20 @@ async def get_schema() -> str:
 async def get_serializer():
     json = await get_schema()
     schema_registry = await get_schema_registry()
+    try:
+        schema_registry.delete_subject("transactions-value")
+    except SchemaRegistryError:
+        pass
     return JSONSerializer(
-        schema_str=json, schema_registry_client=schema_registry
-    )  # Convert schema to string
+        schema_str=json, schema_registry_client=schema_registry, 
+    ) 
 
 
 async def send_transaction_to_kafka(
-    transaction_data: Transaction, topic_name: str, producer 
+    transaction_data: Transaction, topic_name: str, producer, serialiser
 ):
     key = transaction_data.hash
     ctx = SerializationContext(topic=topic_name, field=MessageField.VALUE)
-    serialiser = await get_serializer()
     string_serialiser = StringSerializer("utf_8")
     logger.debug(
         f"Attempting to serialise data: {serialiser(transaction_data.model_dump(), ctx)}"
