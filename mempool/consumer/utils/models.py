@@ -1,6 +1,18 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List, NamedTuple
+from dataclasses import dataclass
 
+@dataclass(frozen=True)
+class StreamConfig:
+    symbols: List[str]
+    update_interval: float
+    buffer_size: int
+    volatility: float
+
+class ChartConfig(NamedTuple):
+    title: str
+    height: int
+    template: str
 
 class TransactionRecieve(BaseModel):
     block_hash: Optional[str] = None
