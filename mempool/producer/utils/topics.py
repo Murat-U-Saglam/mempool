@@ -1,15 +1,13 @@
 from mempool.config.logging import setup_logger
-from confluent_kafka.schema_registry.json_schema import JSONSerializer # type: ignore
 from confluent_kafka.serialization import (  # type: ignore
     StringSerializer,
     SerializationContext,
     MessageField,
 )
-from mempool.stream.producer.model import Transaction
-from mempool.config.provider import get_schema_registry, get_admin_client
-from confluent_kafka.admin import NewTopic # type: ignore
-import json
-from confluent_kafka.schema_registry import SchemaRegistryError # type: ignore
+from mempool.producer.utils.model import Transaction
+from mempool.config.access_config import get_admin_client
+from confluent_kafka.admin import NewTopic  # type: ignore
+
 
 logger = setup_logger(name="topics")
 
@@ -35,24 +33,6 @@ async def create_topic(
                 logger.error(f"Failed to create topic '{topic_name}': {str(e)}")
                 return topic_name
     return topic_name
-
-
-async def get_schema() -> str:
-    with open("/app/mempool/stream/producer/schema.json") as f:
-        schema = json.load(f) 
-    return json.dumps(schema)
-
-
-async def get_serializer():
-    json = await get_schema()
-    schema_registry = await get_schema_registry()
-    try:
-        schema_registry.delete_subject("transactions-value")
-    except SchemaRegistryError:
-        pass
-    return JSONSerializer(
-        schema_str=json, schema_registry_client=schema_registry, 
-    ) 
 
 
 async def send_transaction_to_kafka(

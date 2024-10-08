@@ -1,4 +1,4 @@
-from mempool.stream.consumer.data_stream import main as consooomer
+from mempool.consumer.utils.data_stream import main as consooomer
 from mempool.config.settings import Settings
 import asyncio
 

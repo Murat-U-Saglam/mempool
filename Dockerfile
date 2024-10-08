@@ -3,8 +3,6 @@ FROM python:3.12-slim
 
 RUN pip install poetry
 
-
-
 # Define build arguments
 ARG KAFKA_BROKER
 ARG KAFKA_TOPIC
@@ -20,7 +18,8 @@ ENV MEMPOOL_API=${WSS_URL}
 ENV KAFKA_GROUP=${KAFKA_GROUP}
 ENV SCHEMA_REGISTRY_URL=${SCHEMA_REGISTRY_URL}
 
-# Install debugpy
+RUN poetry config virtualenvs.create false
+
 RUN pip install debugpy
 
 ENV PYTHONPATH=/app
@@ -31,5 +30,3 @@ WORKDIR /app
 
 RUN poetry install --no-interaction --no-ansi
 
-
-CMD ["poetry", "run", "python", "-m", "mempool.main_producer"]

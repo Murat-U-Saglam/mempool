@@ -1,9 +1,9 @@
 import asyncio
-from mempool.stream.producer.data import log_loop
-from mempool.config.provider import get_wss_provider, get_producer
+from mempool.producer.utils.data import log_loop
+from mempool.config.access_config import get_wss_provider, get_producer, get_serializer
 from mempool.config.logging import setup_logger
-from mempool.stream.producer.data import get_transactions_from_mempool
-from mempool.stream.producer.topics import create_topic, get_serializer
+from mempool.producer.utils.data import get_transactions_from_mempool
+from mempool.producer.utils.topics import create_topic
 
 
 logger = setup_logger(name="main_producer")
@@ -17,7 +17,11 @@ async def main():
     topic_name = await create_topic(topic_name="transactions")
     try:
         await log_loop(
-            event_filter=events, web3=web3, producer=producer, topic_name=topic_name, serialiser=serialiser
+            event_filter=events,
+            web3=web3,
+            producer=producer,
+            topic_name=topic_name,
+            serialiser=serialiser,
         )
     except Exception as e:
         logger.error(f"Error in main producer: {e} reason: {e}")

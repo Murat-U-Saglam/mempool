@@ -10,6 +10,7 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     volumes:
       - ./zookeeper-data:/var/lib/zookeeper
+
   broker:
     image: confluentinc/cp-server:7.7.1
     hostname: broker
@@ -92,7 +93,7 @@ services:
       - poetry
       - run
       - python
-      - mempool/main_producer.py
+      - mempool/producer/main_producer.py
     environment:
       - KAFKA_BROKER=${KAFKA_BROKER}
       - KAFKA_TOPIC=${KAFKA_TOPIC}
@@ -113,10 +114,7 @@ services:
         - SCHEMA_REGISTRY_URL=${SCHEMA_REGISTRY_URL}
       context: .
     command:
-      - poetry
-      - run
-      - python
-      - mempool/main_consumer.py
+      ["bash", "-c",  "poetry run streamlit run /app/mempool/consumer/0_👋_Introduction.py --server.port=5678 --server.address=0.0.0.0 --server.runOnSave=True"]    
     environment:
       KAFKA_BROKER: ${KAFKA_BROKER}
       KAFKA_TOPIC: ${KAFKA_TOPIC}
@@ -125,5 +123,7 @@ services:
     depends_on:
       broker:
         condition: service_healthy
+    ports:
+      - "5678:5678"
     volumes:
       - '.:/app'

@@ -93,7 +93,7 @@ services:
     command:
     - sh  
     - '-c'  
-    - poetry run python -m debugpy --listen 0.0.0.0:5678 --wait-for-client -m mempool.main_producer
+    - poetry run python -m debugpy --listen 0.0.0.0:5678 --wait-for-client -m mempool.producer.main_producer
     environment:
       - KAFKA_BROKER=${KAFKA_BROKER}
       - KAFKA_TOPIC=${KAFKA_TOPIC}
@@ -117,9 +117,7 @@ services:
         - SCHEMA_REGISTRY_URL=${SCHEMA_REGISTRY_URL}
       context: .
     command:
-    - sh  
-    - '-c'  
-    - poetry run python -m debugpy --listen 0.0.0.0:5679 --wait-for-client -m mempool.main_consumer
+      ["bash", "-c", "poetry run python -m debugpy --wait-for-client --listen 0.0.0.0:5679 -m streamlit run mempool/consumer/0_👋_Introduction.py --server.port=5678 --server.address=0.0.0.0 --server.runOnSave=True"]
     environment:
       - KAFKA_BROKER=${KAFKA_BROKER}
       - KAFKA_TOPIC=${KAFKA_TOPIC}
