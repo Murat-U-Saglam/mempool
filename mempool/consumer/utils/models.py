@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional, List, NamedTuple
 from dataclasses import dataclass
 
+
 @dataclass(frozen=True)
 class StreamConfig:
     symbols: List[str]
@@ -9,12 +10,14 @@ class StreamConfig:
     buffer_size: int
     volatility: float
 
+
 class ChartConfig(NamedTuple):
     title: str
     height: int
     template: str
 
-class TransactionRecieve(BaseModel):
+
+class TransactionReceive(BaseModel):
     block_hash: Optional[str] = None
     block_number: Optional[int] = None
     from_address: str
@@ -25,11 +28,11 @@ class TransactionRecieve(BaseModel):
     max_priority_fee_per_gas: Optional[int] = None
     hash: str
     nonce: int
-    to: str
+    to: Optional[str] = None
     transaction_index: Optional[int] = None
     value: int
     type: int
-    chain_id: int
+    chain_id: Optional[int] = None
     v: int
     r: str
     s: str

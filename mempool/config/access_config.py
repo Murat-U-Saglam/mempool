@@ -13,8 +13,11 @@ from confluent_kafka.schema_registry.json_schema import JSONDeserializer, JSONSe
 logger = setup_logger(__name__)
 
 
-async def get_wss_provider() -> AsyncWeb3:  # LegacyWebSocketProvider
-    wss = Settings().WSS_URL
+async def get_wss_provider(flag: int = 1) -> AsyncWeb3:
+    if flag == 1:
+        wss = Settings().WSS_URL
+    else:
+        wss = Settings().WSS_URL_2
     web3 = await AsyncWeb3(WebSocketProvider(wss))
     assert await web3.is_connected(), "Failed to connect to web3 provider"
     logger.info(f"Connected to {wss}")

@@ -43,8 +43,9 @@
       "type": "integer"
     },
     "to": {
-      "type": "string",
-      "pattern": "^0x[a-fA-F0-9]{40}$"
+      "type": ["string", "null"],
+      "pattern": "^0x[a-fA-F0-9]{40}$",
+      "default": null
     },
     "transaction_index": {
       "type": ["integer", "null"],
@@ -57,7 +58,8 @@
       "type": "integer"
     },
     "chain_id": {
-      "type": "integer"
+      "type": ["integer", "null"],
+      "default": null
     },
     "v": {
       "type": "integer"

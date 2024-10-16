@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     KAFKA_BROKER: str | None = dotenv_values()["KAFKA_BROKER"]
     KAFKA_GROUP: str | None = dotenv_values()["KAFKA_GROUP"]
     SCHEMA_REGISTRY_URL: str | None = dotenv_values()["SCHEMA_REGISTRY_URL"]
+    WSS_URL_2: str | None = dotenv_values()["WSS_URL_2"]
 
     class Config:
         env_file = ".env"
+        extra = "ignore"

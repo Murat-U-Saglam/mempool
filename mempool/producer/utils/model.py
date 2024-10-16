@@ -15,11 +15,11 @@ class Transaction(BaseModel):
     max_priority_fee_per_gas: Optional[int] = None
     hash: str
     nonce: int
-    to: str
+    to: Optional[str] = None  # When contract creation or it is an internal Transaction
     transaction_index: Optional[int] = None
     value: int
     type: int
-    chain_id: int
+    chain_id: Optional[int] = None
     v: int
     r: str
     s: str

@@ -1,8 +1,8 @@
 import asyncio
-from mempool.producer.utils.data import log_loop
+from mempool.producer.utils.data_stream import log_loop
 from mempool.config.access_config import get_wss_provider, get_producer, get_serializer
 from mempool.config.logging import setup_logger
-from mempool.producer.utils.data import get_transactions_from_mempool
+from mempool.producer.utils.data_stream import get_transactions_from_mempool
 from mempool.producer.utils.topics import create_topic
 
 

@@ -114,7 +114,7 @@ services:
         - SCHEMA_REGISTRY_URL=${SCHEMA_REGISTRY_URL}
       context: .
     command:
-      ["bash", "-c",  "poetry run streamlit run /app/mempool/consumer/0_👋_Introduction.py --server.port=5678 --server.address=0.0.0.0 --server.runOnSave=True"]    
+      ["bash", "-c",  "poetry run streamlit run /app/mempool/consumer/Latest_block.py --server.port=5678 --server.address=0.0.0.0 --server.runOnSave=True"]    
     environment:
       KAFKA_BROKER: ${KAFKA_BROKER}
       KAFKA_TOPIC: ${KAFKA_TOPIC}
