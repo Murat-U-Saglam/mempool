@@ -1,9 +1,17 @@
 import streamlit as st
-import pandas as pd
 import numpy as np
 import time
 from datetime import datetime
 import asyncio
+from dataclasses import dataclass, asdict
+from typing import List
+
+
+@dataclass
+class DataPoint:
+    timestamp: datetime
+    price: float
+    volume: int
 
 
 # Mock data generator to simulate yielded data
@@ -12,9 +20,7 @@ async def mock_data_generator():
         timestamp = datetime.now()
         price = np.random.randint(100, 200) + np.random.random()
         volume = np.random.randint(1000, 10000)
-        yield pd.DataFrame(
-            {"Timestamp": [timestamp], "Price": [price], "Volume": [volume]}
-        )
+        yield DataPoint(timestamp, price, volume)
         await asyncio.sleep(1)  # Simulate delay between data points
 
 
@@ -27,7 +33,7 @@ def save_snapshot(data):
 
 # Initialize session state
 if "data" not in st.session_state:
-    st.session_state.data = pd.DataFrame(columns=["Timestamp", "Price", "Volume"])
+    st.session_state.data = []
 if "snapshots" not in st.session_state:
     st.session_state.snapshots = {}
 if "current_view" not in st.session_state:
@@ -78,15 +84,35 @@ chart_placeholder = st.empty()
 # Function to update display
 def update_display(data):
     # Update stream display
-    stream_placeholder.dataframe(data.tail(10))
+    stream_placeholder.table(data[-10:])
 
     # Update summary statistics
-    stats = data.describe()
-    stats_placeholder.dataframe(stats)
+    if data:
+        prices = [d.price for d in data]
+        volumes = [d.volume for d in data]
+        stats = {
+            "Price": {
+                "mean": np.mean(prices),
+                "std": np.std(prices),
+                "min": np.min(prices),
+                "max": np.max(prices),
+            },
+            "Volume": {
+                "mean": np.mean(volumes),
+                "std": np.std(volumes),
+                "min": np.min(volumes),
+                "max": np.max(volumes),
+            },
+        }
+        stats_placeholder.table(stats)
 
     # Update chart
-    chart_data = data.set_index("Timestamp")
-    chart_placeholder.line_chart(chart_data["Price"])
+    if data:
+        chart_data = {
+            "Timestamp": [d.timestamp for d in data],
+            "Price": [d.price for d in data],
+        }
+        chart_placeholder.line_chart(chart_data, x="Timestamp", y="Price")
 
 
 # Async function to update data
@@ -94,12 +120,10 @@ async def update_data():
     async for new_data in mock_data_generator():
         if st.session_state.current_view == "Real-time Stream":
             # Append new data
-            st.session_state.data = pd.concat(
-                [st.session_state.data, new_data], ignore_index=True
-            )
+            st.session_state.data.append(new_data)
 
             # Keep only the last 100 records
-            st.session_state.data = st.session_state.data.tail(100)
+            st.session_state.data = st.session_state.data[-100:]
 
             # Update display with real-time data
             update_display(st.session_state.data)

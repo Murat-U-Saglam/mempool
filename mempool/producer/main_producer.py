@@ -12,8 +12,8 @@ logger = setup_logger(name="main_producer")
 async def main():
     web3 = await get_wss_provider()
     events = await get_transactions_from_mempool(web3=web3)
-    producer = await get_producer()
-    serialiser = await get_serializer()
+    producer = get_producer()
+    serialiser = get_serializer()
     topic_name = await create_topic(topic_name="transactions")
     try:
         await log_loop(

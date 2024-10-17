@@ -15,7 +15,7 @@ logger = setup_logger(name="topics")
 async def create_topic(
     topic_name: str, num_partitions: int = 1, replication_factor: int = 1
 ) -> str:
-    admin_client = await get_admin_client()
+    admin_client = get_admin_client()
     topic_metadata = admin_client.list_topics(timeout=10)
     if topic_name in topic_metadata.topics:
         logger.info(f"Topic '{topic_name}' already exists, attaching to it.")

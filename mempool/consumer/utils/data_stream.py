@@ -4,7 +4,7 @@ from mempool.config.access_config import get_deserializer, get_consumer
 from confluent_kafka.serialization import SerializationContext, MessageField  # type: ignore
 import pandas as pd
 from mempool.consumer.utils.models import TransactionReceive
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Generator
 from web3 import Web3
 from collections import deque
 import streamlit as st
@@ -12,6 +12,7 @@ from typing import List, Deque
 from pydantic import ValidationError
 import json
 import time
+
 
 logger = setup_logger(name="eth-transaction-consumer")
 
@@ -65,72 +66,60 @@ async def process_stream(
         st.error(f"Stream processing error: {e}")
 
 
-async def get_data_stream(
+def get_data_stream(
     topic_name: str | None = None,
     max_retries: int = 3,
     retry_delay: float = 5.0,
     max_empty_messages: int = 100,
-) -> AsyncGenerator[TransactionReceive, None]:
+) -> Generator[TransactionReceive, None, None]:
     if topic_name is None:
         logger.error("No topic name provided")
         return
 
     for attempt in range(max_retries):
-        try:
-            c = await get_consumer(topic_name=topic_name)
-            c.subscribe([topic_name])
-            deserialiser = await get_deserializer()
-            empty_message_counter = 0
+        c = get_consumer(topic_name=topic_name)
+        c.subscribe([topic_name])
+        deserialiser = get_deserializer()
+        empty_message_counter = 0
 
-            while True:
-                try:
-                    message = c.poll(timeout=1.0)
-                    
-                    if message is None:
-                        empty_message_counter += 1
-                        if empty_message_counter > max_empty_messages:
-                            logger.warning(f"Received {max_empty_messages} empty messages. Reconnecting...")
-                            break
-                        await asyncio.sleep(0.1)
-                        continue
+        while True:
+            message = c.poll(timeout=1.0)
 
-                    if message.error():
-                        logger.error(f"Kafka message error: {message.error()}")
-                        continue
-
-                    transaction = deserialiser(
-                        message.value(),
-                        SerializationContext(message.topic(), field=MessageField.VALUE),
+            if message is None:
+                empty_message_counter += 1
+                if empty_message_counter > max_empty_messages:
+                    logger.warning(
+                        f"Received {max_empty_messages} empty messages. Reconnecting..."
                     )
-                    logger.debug(f"Consumed message {message.key()}: {message.value()}")
-                    tx = TransactionReceive(**transaction)
-                    yield tx
-                    empty_message_counter = 0  # Reset counter on successful message
+                    break
+                time.sleep(0.01)
+                continue
 
-                except ValidationError as e:
-                    logger.error(f"Validation error: {e}")
-                except Exception as e:
-                    logger.error(f"Unexpected error processing message: {str(e)}")
+            if message.error():
+                logger.error(f"Kafka message error: {message.error()}")
+                continue
 
-        except Exception as e:
-            logger.error(f"Error in Kafka consumer: {str(e)}")
-            if attempt < max_retries - 1:
-                logger.info(f"Retrying in {retry_delay} seconds...")
-                await asyncio.sleep(retry_delay)
-            else:
-                logger.error("Max retries reached. Exiting.")
-                raise
+            transaction = deserialiser(
+                message.value(),
+                SerializationContext(message.topic(), field=MessageField.VALUE),
+            )
+            logger.debug(f"Consumed message {message.key()}: {message.value()}")
+            tx = TransactionReceive(**transaction)
+            yield tx
+            empty_message_counter = 0  # Reset counter on successful message
+            time.sleep(0.1)
 
-        finally:
-            try:
-                c.close()
-                logger.info("Kafka consumer closed.")
-            except Exception as e:
-                logger.error(f"Error closing Kafka consumer: {str(e)}")
+        c.close()
+        logger.info("Kafka consumer closed.")
+
+        if attempt < max_retries - 1:
+            logger.info(f"Retrying in {retry_delay} seconds...")
+            time.sleep(retry_delay)
+        else:
+            logger.error("Max retries reached. Exiting.")
+            break
 
     logger.info("Exiting get_data_stream")
-        
-
 
 
 def analyse_group(transaction: List[TransactionReceive]):

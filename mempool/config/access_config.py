@@ -24,7 +24,7 @@ async def get_wss_provider(flag: int = 1) -> AsyncWeb3:
     return web3
 
 
-async def get_producer() -> Producer:
+def get_producer() -> Producer:
     return Producer(
         {
             "bootstrap.servers": Settings().KAFKA_BROKER,
@@ -33,15 +33,15 @@ async def get_producer() -> Producer:
     )
 
 
-async def get_admin_client() -> AdminClient:
+def get_admin_client() -> AdminClient:
     return AdminClient({"bootstrap.servers": Settings().KAFKA_BROKER})
 
 
-async def get_schema_registry() -> SchemaRegistryClient:
+def get_schema_registry() -> SchemaRegistryClient:
     return SchemaRegistryClient({"url": Settings().SCHEMA_REGISTRY_URL})
 
 
-async def get_consumer(topic_name: str) -> Consumer:
+def get_consumer(topic_name: str) -> Consumer:
     return Consumer(
         {
             "bootstrap.servers": Settings().KAFKA_BROKER,
@@ -52,15 +52,15 @@ async def get_consumer(topic_name: str) -> Consumer:
     )
 
 
-async def get_schema() -> str:
+def get_schema() -> str:
     with open("/app/mempool/config/schema.json") as f:
         schema = json.load(f)
     return json.dumps(schema)
 
 
-async def get_serializer():
-    json = await get_schema()
-    schema_registry = await get_schema_registry()
+def get_serializer():
+    json = get_schema()
+    schema_registry = get_schema_registry()
     try:
         schema_registry.delete_subject("transactions-value")
     except SchemaRegistryError:
@@ -71,9 +71,9 @@ async def get_serializer():
     )
 
 
-async def get_deserializer():
-    json = await get_schema()
-    schema_registry = await get_schema_registry()
+def get_deserializer():
+    json = get_schema()
+    schema_registry = get_schema_registry()
     return JSONDeserializer(
         schema_str=json, schema_registry_client=schema_registry
     )  # Convert schema to string
