@@ -1,15 +1,11 @@
-#Latest_block.py
 import streamlit as st
-from pydantic import BaseModel, Field
-from datetime import datetime
 from mempool.consumer.utils.models import TransactionReceive
 from mempool.config.access_config import Settings
 from mempool.consumer.utils.data_stream import get_data_stream
-from typing import List, Dict, Optional, Any, Union
+from typing import List, Dict, Generator, Any
+from pydantic import BaseModel, Field
+from datetime import datetime
 from enum import StrEnum
-import asyncio
-import plotly.graph_objects as go
-import time
 
 
 class BlockMetric(BaseModel):
@@ -28,120 +24,78 @@ class BlockStates(StrEnum):
 class BlockData(BaseModel):
     metrics: BlockMetric = BlockMetric()
     transactions: List[TransactionReceive] = []
-    figure: Any = None
     status: str = BlockStates.PENDING
+    figure: Any = None
 
 
+st.set_page_config("Mempool Analyser", ":chart_with_upwards_trend:", "wide")
 if "current_block_data" not in st.session_state:
     st.session_state.current_block_data = BlockData()
 if "historical_blocks" not in st.session_state:
-    st.session_state.historical_blocks = {}  # : Dict[int, BlockData] =
+    st.session_state.historical_blocks: Dict[int, BlockData] = {}
 if "latest_block_number" not in st.session_state:
     st.session_state.latest_block_number = 0
 if "current_view" not in st.session_state:
     st.session_state.current_view = "pending_block"
-if "snapshot_butons" not in st.session_state:
+if "snapshot_buttons" not in st.session_state:
     st.session_state.snapshot_buttons = []
 
-st.set_page_config(
-    page_title="Blockchain Analyser",
-    page_icon=":chart_with_upwards_trend:",
-    layout="wide",
-)
+st.title("Mempool Analyser")
+with st.sidebar:
+    if st.button(":chart_with_upwards_trend: Pending Block"):
+        st.session_state.current_view = "pending_block"
+    st.sidebar.title("Histoical Blocks")
+    for block_number in st.session_state.historical_blocks.keys():
+        if st.button(f"Block {block_number}"):
+            st.session_state.current_view = block_number
 
-st.title("Mempool analyser")
-
-
-fig = go.Figure()
 metrics_holder = st.empty()
 historical_holder = st.sidebar.empty()
-if st.sidebar.button(":chart_with_upwards_trend: Pending Block"):
-    st.session_state.current_view = "pending_block"
-st.sidebar.title(
-    body=f"Currently viewing: {'Mempool' if st.session_state.current_view == 'pending_block' else st.session_state.current_view}"
-)
-st.sidebar.title(body="Historical Blocks")
 
 
-def process_transaction(transaction: TransactionReceive) -> Optional[int]:
-    st.session_state.current_block_data.transactions.append(transaction)
-    _update_block_metrics(transaction)
-    if (
-        transaction.block_number is None
-        or transaction.block_number <= st.session_state.latest_block_number
-        or transaction.block_number == 0
-    ):
-        return None
-    else:
-        st.session_state.latest_block_number = transaction.block_number
-        _save_current_block_data()
-        return transaction.block_number
-
-
-def _update_block_metrics(transaction: TransactionReceive):
-    current_metrics = st.session_state.current_block_data.metrics
-    current_metrics.transaction_count += 1
-    current_metrics.total_gas_used += transaction.gas
-    current_metrics.total_value_in_eth += transaction.value
-    current_metrics.average_gas_price = (
-        current_metrics.total_gas_used + transaction.gas_price
-    ) / current_metrics.transaction_count
-    current_metrics.timestamp = datetime.now()
-
-
-def _save_current_block_data():
-    st.session_state.current_block_data.status = BlockStates.COMPLETED
-    st.session_state.historical_blocks[st.session_state.latest_block_number] = (
-        st.session_state.current_block_data
+def update_current_metrics(tx: TransactionReceive):
+    current_block = st.session_state.current_block_data
+    current_block.transactions.append(tx)
+    current_block.metrics.transaction_count += 1
+    current_block.metrics.total_gas_used += tx.gas
+    current_block.metrics.total_value_in_eth += tx.value
+    current_block.metrics.average_gas_price = (
+        current_block.metrics.total_gas_used / current_block.metrics.transaction_count
     )
-    st.session_state.current_block_data = BlockData()
+    current_block.metrics.timestamp = datetime.now()
+    st.session_state.current_block_data = current_block
 
 
-def get_block_data(block_number: Union[int, str] = "pending_block") -> BlockData:
-    if block_number == "pending_block" or block_number is None:
-        return st.session_state.current_block_data
-    return st.session_state.historical_blocks[int(block_number)]
+def analyse_if_block_complete(tx: TransactionReceive):
+    if (
+        tx.block_number is not None
+        and tx.block_number > st.session_state.latest_block_number
+    ):
+        st.session_state.latest_block_number = tx.block_number
+        st.session_state.historical_blocks[tx.block_number] = (
+            st.session_state.current_block_data
+        )
+        st.session_state.current_block_data = BlockData()
+        return True
 
 
-def update_side_bar(container):
-    with container:
-        if st.sidebar.button(
-            label=f":white_check_mark: Block Number {st.session_state.latest_block_number}",
-            key=f"{st.session_state.latest_block_number}",
-        ):
-            st.session_state.snapshot_buttons.append(st.session_state.latest_block_number)
-            st.session_state.current_view = st.session_state.latest_block_number
-            
+def create_button():
+    new_block_number = st.session_state.latest_block_number
+    if new_block_number not in st.session_state.snapshot_buttons:
+        if st.sidebar.button(f"Block {new_block_number}"):
+            st.session_state.current_view = new_block_number
+            st.session_state.snapshot_buttons.append(new_block_number)
 
 
-def update_display(metrics: BlockMetric):
-    metrics_holder.write(metrics.dict())
-
-
-@st.cache_resource
-def get_stream():
-    return get_data_stream(topic_name=Settings().KAFKA_TOPIC)
-
-
-def process_data_stream():
-    for tx in get_stream():
-        if st.session_state.current_view == "pending_block":
-            current_block_number = process_transaction(transaction=tx)
-            block_data_to_display = get_block_data(
-                block_number=st.session_state.current_view
-            )
-            current_metrics_for_block = block_data_to_display.metrics
-            update_display(current_metrics_for_block)
-            if current_block_number is not None:
-                update_side_bar(container=historical_holder)
-        else:
-            snapshot_data = get_block_data(block_number=st.session_state.current_view)
-            update_display(snapshot_data.metrics)
-            # st.rerun()
-
-        time.sleep(0.01)  # Small delay to prevent blocking
-
-
-if "stream_processed" not in st.session_state:
-    st.session_state.stream_processed = True
-    process_data_stream()
+for tx in get_data_stream():
+    update_current_metrics(tx)
+    new_block = analyse_if_block_complete(tx)
+    if new_block:
+        create_button()
+    if st.session_state.current_view == "pending_block":
+        metrics_holder.write(st.session_state.current_block_data.metrics.dict())
+    else:
+        metrics_data = st.session_state.historical_blocks[
+            st.session_state.current_view
+        ].metrics
+        metrics_holder.write(metrics_data.dict())

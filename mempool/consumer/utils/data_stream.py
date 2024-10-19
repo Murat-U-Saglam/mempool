@@ -3,6 +3,7 @@ import asyncio
 from mempool.config.access_config import get_deserializer, get_consumer
 from confluent_kafka.serialization import SerializationContext, MessageField  # type: ignore
 import pandas as pd
+from mempool.config.access_config import Settings
 from mempool.consumer.utils.models import TransactionReceive
 from typing import AsyncGenerator, Generator
 from web3 import Web3
@@ -68,13 +69,13 @@ async def process_stream(
 
 def get_data_stream(
     topic_name: str | None = None,
-    max_retries: int = 3,
-    retry_delay: float = 5.0,
+    max_retries: int = 1,
+    retry_delay: float = 2,
     max_empty_messages: int = 100,
 ) -> Generator[TransactionReceive, None, None]:
     if topic_name is None:
         logger.error("No topic name provided")
-        return
+        topic_name = Settings().KAFKA_TOPIC
 
     for attempt in range(max_retries):
         c = get_consumer(topic_name=topic_name)
@@ -103,11 +104,12 @@ def get_data_stream(
                 message.value(),
                 SerializationContext(message.topic(), field=MessageField.VALUE),
             )
-            logger.debug(f"Consumed message {message.key()}: {message.value()}")
+            logger.debug(msg=f"Consumed message {message.key()}: {message.value()}")
             tx = TransactionReceive(**transaction)
+            logger.info(f"Yielding transaction: {tx}")
             yield tx
             empty_message_counter = 0  # Reset counter on successful message
-            time.sleep(0.1)
+            time.sleep(0.01)
 
         c.close()
         logger.info("Kafka consumer closed.")

@@ -1,3 +1,4 @@
+# Latest_block.py
 import streamlit as st
 from pydantic import BaseModel, Field
 from datetime import datetime
@@ -31,16 +32,15 @@ class BlockData(BaseModel):
     status: str = BlockStates.PENDING
 
 
-# Initialize session state
 if "current_block_data" not in st.session_state:
     st.session_state.current_block_data = BlockData()
 if "historical_blocks" not in st.session_state:
-    st.session_state.historical_blocks = {}
+    st.session_state.historical_blocks = {}  # : Dict[int, BlockData] =
 if "latest_block_number" not in st.session_state:
     st.session_state.latest_block_number = 0
 if "current_view" not in st.session_state:
     st.session_state.current_view = "pending_block"
-if "snapshot_buttons" not in st.session_state:
+if "snapshot_butons" not in st.session_state:
     st.session_state.snapshot_buttons = []
 
 st.set_page_config(
@@ -51,27 +51,16 @@ st.set_page_config(
 
 st.title("Mempool analyser")
 
+
 fig = go.Figure()
 metrics_holder = st.empty()
 historical_holder = st.sidebar.empty()
-
-# Sidebar for navigation
-st.sidebar.title("Navigation")
 if st.sidebar.button(":chart_with_upwards_trend: Pending Block"):
     st.session_state.current_view = "pending_block"
-    st.rerun()
-
 st.sidebar.title(
     body=f"Currently viewing: {'Mempool' if st.session_state.current_view == 'pending_block' else st.session_state.current_view}"
 )
-
 st.sidebar.title(body="Historical Blocks")
-for snapshot in st.session_state.snapshot_buttons:
-    if st.sidebar.button(
-        f":white_check_mark: Block Number {snapshot}", key=f"snapshot_{snapshot}"
-    ):
-        st.session_state.current_view = snapshot
-        st.rerun()
 
 
 def process_transaction(transaction: TransactionReceive) -> Optional[int]:
@@ -86,7 +75,6 @@ def process_transaction(transaction: TransactionReceive) -> Optional[int]:
     else:
         st.session_state.latest_block_number = transaction.block_number
         _save_current_block_data()
-        add_snapshot_button_of_previous_block()
         return transaction.block_number
 
 
@@ -104,7 +92,7 @@ def _update_block_metrics(transaction: TransactionReceive):
 def _save_current_block_data():
     st.session_state.current_block_data.status = BlockStates.COMPLETED
     st.session_state.historical_blocks[st.session_state.latest_block_number] = (
-        st.session_state.current_block_data.copy()
+        st.session_state.current_block_data
     )
     st.session_state.current_block_data = BlockData()
 
@@ -115,9 +103,16 @@ def get_block_data(block_number: Union[int, str] = "pending_block") -> BlockData
     return st.session_state.historical_blocks[int(block_number)]
 
 
-def add_snapshot_button_of_previous_block():
-    if st.session_state.latest_block_number not in st.session_state.snapshot_buttons:
-        st.session_state.snapshot_buttons.append(st.session_state.latest_block_number)
+def update_side_bar(container):
+    with container:
+        if st.sidebar.button(
+            label=f":white_check_mark: Block Number {st.session_state.latest_block_number}",
+            key=f"{st.session_state.latest_block_number}",
+        ):
+            st.session_state.snapshot_buttons.append(
+                st.session_state.latest_block_number
+            )
+            st.session_state.current_view = st.session_state.latest_block_number
 
 
 def update_display(metrics: BlockMetric):
@@ -131,18 +126,21 @@ def get_stream():
 
 def process_data_stream():
     for tx in get_stream():
-        current_block_number = process_transaction(transaction=tx)
-
-        block_data_to_display = get_block_data(
-            block_number=st.session_state.current_view
-        )
-        current_metrics_for_block = block_data_to_display.metrics
-        update_display(metrics=current_metrics_for_block)
+        if st.session_state.current_view == "pending_block":
+            current_block_number = process_transaction(transaction=tx)
+            block_data_to_display = get_block_data(
+                block_number=st.session_state.current_view
+            )
+            current_metrics_for_block = block_data_to_display.metrics
+            update_display(current_metrics_for_block)
+            if current_block_number is not None:
+                update_side_bar(container=historical_holder)
+        else:
+            snapshot_data = get_block_data(block_number=st.session_state.current_view)
+            update_display(snapshot_data.metrics)
+            # st.rerun()
 
         time.sleep(0.01)  # Small delay to prevent blocking
-
-        if current_block_number is not None:
-            st.rerun()
 
 
 if "stream_processed" not in st.session_state:

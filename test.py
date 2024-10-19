@@ -1,3 +1,4 @@
+# working_iteration.py
 import streamlit as st
 import numpy as np
 import time
@@ -55,8 +56,8 @@ if st.sidebar.button("Take Snapshot Now"):
     st.sidebar.success(f"Snapshot taken at {new_snapshot}")
 
 # Real-time stream button
-if st.sidebar.button("Return to Real-time Stream"):
-    st.session_state.current_view = "Real-time Stream"
+if st.sidebar.button("Return to Mempool Block"):
+    st.session_state.current_view = "pending_block"
 
 # Display current view
 st.sidebar.write(f"Currently viewing: {st.session_state.current_view}")
